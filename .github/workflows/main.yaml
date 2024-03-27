@@ -1,0 +1,87 @@
+name: MAIN_PIPELINE
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - qa
+      - dev
+      - master
+  pull_request:
+      branches:
+        - dev     
+permissions:
+    checks: write
+    security-events: write
+    packages: write
+    actions: write
+    pull-requests: write
+    contents: read
+    
+jobs:
+    Talisman:
+      name: Talisman
+      uses: GKprojects/reusabletemplate/.github/workflows/talisman.yml@main
+      secrets: inherit
+      #octo-org/example-repo/.github/workflows/reusable-workflow.yml@main
+    KICS:
+      needs: Talisman
+      name: KICS
+      uses: GKprojects/reusabletemplate/.github/workflows/KICS.yml@main
+      secrets: inherit 
+
+    Build_Test:
+      needs: KICS
+      name: Build and Test
+      uses: GKprojects/reusabletemplate/.github/workflows/Build_Test.yml@main
+      secrets: inherit
+    
+    Snyk:
+      needs: Build_Test
+      name: Snyk_security check
+      uses: GKprojects/reusabletemplate/.github/workflows/snyk.yml@main
+      secrets: inherit
+     
+    Sbom:
+      needs: Snyk
+      name: Sbom
+      uses: GKprojects/reusabletemplate/.github/workflows/sbom.yml@main
+      secrets: inherit
+
+    Docker_build:
+      needs: Sbom
+      name: Docker build
+      uses: GKprojects/reusabletemplate/.github/workflows/docker.yml@main
+      secrets: inherit
+      
+    Deployment:
+      needs: Docker_build
+      name: Deployment
+      uses: GKprojects/reusabletemplate/.github/workflows/deploy.yml@main
+      secrets: inherit
+      
+    Deploy:
+      runs-on: ubuntu-latest
+      needs: Deployment 
+      steps:
+       - name: Install Kubectl
+         uses: azure/setup-kubectl@v3
+         with:
+          version: 'v1.28.0' # default is latest stable
+         id: install
+       - name: Configure AWS Credentials
+         uses: aws-actions/configure-aws-credentials@v4
+         with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: us-east-1
+       - name: Set kubectl context
+         run: aws eks --region us-east-1 update-kubeconfig --name ekscluster
+       - name: Checkout Repository
+         uses: actions/checkout@v3
+         with:
+            repository: GKprojects/deployment   
+            token: ${{ secrets.PAT_TOKEN }}
+       - name: Apply Kubernetes manifests
+         run: |
+          # cd deployment
+          kubectl apply -f deployment.yaml -f service.yaml

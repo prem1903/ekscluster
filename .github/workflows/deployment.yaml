@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: java
+  template:
+    metadata:
+      labels:
+        app: java
+    spec:
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: docker-secret
+      containers:
+        - name: java
+          image: goksatexpleo/javacoffeshop:87
+          ports:
+            - containerPort: 8083

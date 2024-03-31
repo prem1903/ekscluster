@@ -26,7 +26,7 @@ jobs:
 
     Sbom:
       name: Sbom
-      uses: prem1903/ekscluster/.github/workflows/sbom.yaml@main
+      uses: prem1903/ekscluster/.github/workflows/sbom.yml@main
       secrets: inherit
 
     KICS:

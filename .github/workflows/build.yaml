@@ -1,0 +1,31 @@
+name: Build_test
+on:
+  workflow_call:
+
+permissions:
+    checks: write
+    security-events: write
+    packages: write
+    actions: write
+    pull-requests: write 
+    
+jobs:
+  Build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+      with:
+            
+            token: ${{secrets.PAT_TOKEN }}
+        
+    - name: Build Maven
+      run: mvn package
+        
+    - name: Upload to artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ github.event.repository.name }}-artifact
+        path: |
+          ./target/*.jar
+          

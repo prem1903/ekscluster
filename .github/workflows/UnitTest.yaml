@@ -1,0 +1,76 @@
+name: Unit_test
+
+on:
+
+  workflow_call:
+ 
+permissions:
+
+    checks: write
+
+    security-events: write
+
+    packages: write
+
+    actions: write
+
+    pull-requests: write 
+
+jobs:
+
+  Unit_test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Checkout Repository
+
+      uses: actions/checkout@v3
+
+      with:
+
+            repository: prem1903/ekscluster 
+
+            ref: main 
+
+            token: ${{secrets.PAT_TOKEN }} 
+
+    - name: Unit Test
+
+      run: mvn clean compile test
+
+    - name: Report
+
+      uses: dorny/test-reporter@v1
+
+      if: always()
+
+      with:
+
+        name: Maven Tests
+
+        path: target/surefire-reports/*.xml
+
+        reporter: java-junit
+
+        fail-on-error: true
+
+      env:
+
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+
+    - name: Upload JaCoCo coverage report
+
+      uses: actions/upload-artifact@v2
+
+      with:
+
+         name: unitTest-report
+
+         path: |
+
+           target/site/jacoco
+
+           target/surefire-reports

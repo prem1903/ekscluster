@@ -23,16 +23,28 @@ jobs:
       uses: prem1903/ekscluster/.github/workflows/talisman.yml@main
       secrets: inherit
       #octo-org/example-repo/.github/workflows/reusable-workflow.yml@main
+
+    Sbom:
+      name: Sbom
+      uses: prem1903/ekscluster/.github/workflows/sbom.yaml@main
+      secrets: inherit
+
     KICS:
       needs: Talisman
       name: KICS
       uses: prem1903/ekscluster/.github/workflows/KICS.yml@main
       secrets: inherit 
+    
+    Unit_Test:
+      needs: [ Sbom, Talisman ]
+      name: Unit Test
+      uses: prem1903/ekscluster/.github/workflows/UnitTest.yaml@main
+      secrets: inherit
 
     Build_Test:
       needs: KICS
       name: Build and Test
-      uses: prem1903/ekscluster/.github/workflows/Build_Test.yml@main
+      uses: prem1903/ekscluster/.github/workflows/build.yaml@main
       secrets: inherit
     
     Snyk:
@@ -79,7 +91,7 @@ jobs:
        - name: Checkout Repository
          uses: actions/checkout@v3
          with:
-            repository: GKprojects/deployment   
+            repository: prem1903/deployment   
             token: ${{ secrets.PAT_TOKEN }}
        - name: Apply Kubernetes manifests
          run: |

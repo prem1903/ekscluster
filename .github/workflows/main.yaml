@@ -46,18 +46,6 @@ jobs:
       name: Build and Test
       uses: prem1903/ekscluster/.github/workflows/build.yaml@main
       secrets: inherit
-    
-    Snyk:
-      needs: Build_Test
-      name: Snyk_security check
-      uses: prem1903/ekscluster/.github/workflows/snyk.yml@main
-      secrets: inherit
-     
-    Sbom:
-      needs: Snyk
-      name: Sbom
-      uses: prem1903/ekscluster/.github/workflows/sbom.yml@main
-      secrets: inherit
 
     Docker_build:
       needs: Sbom

@@ -47,41 +47,70 @@ jobs:
       uses: prem1903/ekscluster/.github/workflows/build.yaml@main
       secrets: inherit
 
-    Docker_build:
-      needs: Sbom
-      name: Docker build
-      uses: prem1903/ekscluster/.github/workflows/docker.yml@main
-      secrets: inherit
-      
-    Deployment:
-      needs: Docker_build
-      name: Deployment
-      uses: prem1903/ekscluster/.github/workflows/deploy.yml@main
-      secrets: inherit
-      
-    Deploy:
+    Docker_build_push:
+      needs: Build  # Assuming this job depends on the 'Build' job
       runs-on: ubuntu-latest
-      needs: Deployment 
       steps:
-       - name: Install Kubectl
-         uses: azure/setup-kubectl@v3
-         with:
-          version: 'v1.28.0' # default is latest stable
-         id: install
-       - name: Configure AWS Credentials
-         uses: aws-actions/configure-aws-credentials@v4
-         with:
-            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            aws-region: us-east-1
-       - name: Set kubectl context
-         run: aws eks --region us-east-1 update-kubeconfig --name ekscluster
-       - name: Checkout Repository
-         uses: actions/checkout@v3
-         with:
-            repository: prem1903/deployment   
-            token: ${{ secrets.PAT_TOKEN }}
-       - name: Apply Kubernetes manifests
-         run: |
-          # cd deployment
-          kubectl apply -f deployment.yaml -f service.yaml
+        - name: Checkout Repository
+          uses: actions/checkout@v3
+          with:
+              token: ${{secrets.PAT_TOKEN }}
+        - name: Download artifact
+          uses: actions/download-artifact@v3
+          with:
+              name: ${{ github.event.repository.name }}-artifact
+              path: ./target/*.jar
+         
+        - name: Login to Docker Hub
+          uses: docker/login-action@v2
+          with:
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_TOKEN }}
+    
+        - name: Build Container image
+          run: docker build -t ${{ secrets.DOCKER_REPO }}:${{ github.run_number }} .
+    
+        - name: Publish Docker image
+          run: docker push ${{ secrets.DOCKER_REPO }}:${{ github.run_number }}
+    Trivy:
+        needs: Docker_build_push
+        name: Trivy Scan
+        uses: Expleo-France/Terraform-K8S/.github/workflows/trivy.yaml@Rak-test
+        secrets: inherit
+    Deployment:
+        needs: Docker_build_push
+        name: Update image tag
+        uses: Expleo-France/Terraform-K8S/.github/workflows/deployment.yaml@Rak-test
+        secrets: inherit
+    Deploy:
+        runs-on: ubuntu-latest
+        needs: Deployment 
+        steps:
+          - name: Checkout Repository
+            uses: actions/checkout@v3
+            with:
+              token: ${{secrets.PAT_TOKEN }}
+          - name: Install Kubectl
+            uses: azure/setup-kubectl@v3
+            with:
+            version: 'v1.28.0' # default is latest stable
+            id: install
+          - name: Configure AWS Credentials
+            uses: aws-actions/configure-aws-credentials@v4
+            with:
+              aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+              aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+              aws-region: us-west-2
+          - name: Set kubectl context
+            run: aws eks --region us-west-2 update-kubeconfig --name module-eks-demo
+          
+          - name: Checkout Repository
+            uses: actions/checkout@v3
+            with:
+              repository: Expleo-France/Deployment   
+              token: ${{ secrets.PAT_TOKEN }}
+          - name: Apply Kubernetes manifests
+            run: |
+             cd ${{ github.event.repository.name }}
+             kubectl apply -f deployment.yaml -f service.yml
+                

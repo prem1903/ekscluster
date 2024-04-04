@@ -1,0 +1,33 @@
+name: Trivy
+on:
+  workflow_dispatch:
+  workflow_call:
+
+  
+jobs:
+ Trivy_Scan:
+  runs-on: ubuntu-latest
+  steps:
+      - name: Pulling Docker image
+        run: |
+          docker pull ${{ secrets.DOCKER_REPO }}:${{ github.run_number }}
+      
+  
+    
+      - name: Trivy Scan
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/master/contrib/install.sh | sh -s -- -b /usr/local/bin
+          trivy --version
+          # trivy image ${{ secrets.DOCKER_USERNAME_P }}/${{ env.DOCKER_REPO }}:${{ github.run_number }} > trivy-results.json
+          trivy image ${{ secrets.DOCKER_REPO }}:${{ github.run_number }} -f json -o trivy-results.json
+          ls -la
+          cat trivy-results.json
+        continue-on-error: true
+           
+        
+    
+      - name: Upload Trivy JSON artifact
+        uses: actions/upload-artifact@v2
+        with:
+         name: trivy-results
+         path: trivy-results.json

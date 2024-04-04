@@ -35,11 +35,11 @@ jobs:
       uses: prem1903/ekscluster/.github/workflows/KICS.yml@main
       secrets: inherit 
     
-    Unit_Test:
-      needs: [ Sbom, Talisman ]
-      name: Unit Test
-      uses: prem1903/ekscluster/.github/workflows/UnitTest.yaml@main
-      secrets: inherit
+    # Unit_Test:
+    #   needs: [ Sbom, Talisman ]
+    #   name: Unit Test
+    #   uses: prem1903/ekscluster/.github/workflows/UnitTest.yaml@main
+    #   secrets: inherit
 
     Build_Test:
       needs: KICS

@@ -80,7 +80,7 @@ jobs:
     Deployment:
         needs: Docker_build_push
         name: Update image tag
-        uses: prem1903/ekscluster/.github/workflows//deployment.yaml@main
+        uses: prem1903/ekscluster/.github/workflows/deployment.yaml@main
         secrets: inherit
     Deploy:
         runs-on: ubuntu-latest

@@ -77,19 +77,18 @@ jobs:
         name: Trivy Scan
         uses: prem1903/ekscluster/.github/workflows/trivy.yaml@main
         secrets: inherit
-    Deployment:
-        needs: Docker_build_push
-        name: Update image tag
-        uses: prem1903/ekscluster/.github/workflows/deployment.yaml@main
-        secrets: inherit
+
     Deploy:
         runs-on: ubuntu-latest
-        needs: Deployment 
+        needs: Trivy
         steps:
-          - name: Checkout Repository
-            uses: actions/checkout@v3
-            with:
-              token: ${{secrets.PAT_TOKEN }}
+          # - name: Checkout Repository
+          #   uses: actions/checkout@v3
+
+          #   with:            
+          #     repository: prem1903/deployment
+              # #token: ${{secrets.PAT_TOKEN }}
+
           - name: Install Kubectl
             uses: azure/setup-kubectl@v3
             with:
@@ -102,12 +101,12 @@ jobs:
               aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
               aws-region: ap-south-1
           - name: Set kubectl context
-            run: aws eks --region ap-south-1 update-kubeconfig --name module-eks-demo
+            run: aws eks --region ap-south-1 update-kubeconfig --name ekscluster
           
           - name: Checkout Repository
             uses: actions/checkout@v3
             with:
-              repository: Expleo-France/Deployment   
+              repository: prem1903/deployment  
               token: ${{ secrets.PAT_TOKEN }}
           - name: Apply Kubernetes manifests
             run: |

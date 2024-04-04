@@ -13,7 +13,7 @@ jobs:
           - name: Download artifact
             uses: actions/download-artifact@v3
             with:
-                name: demopartifact
+                name: demoartifact
                 path: ./
               
           - name: Login to DockerHub
